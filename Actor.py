@@ -136,15 +136,3 @@ class Actor():
 
         self.epsilon = self.epsilon - self.eps_dec if self.epsilon > self.eps_end else self.eps_end
 
-
-
-
-
-
-
-
-
-
-
-
-    

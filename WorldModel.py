@@ -5,7 +5,6 @@ from datetime import datetime
 from scipy.optimize import linprog
 import matplotlib.pyplot as plt
 
-
 # Environment Constrains
 max_episode_length = 60
 
