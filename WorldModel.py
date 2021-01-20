@@ -67,11 +67,11 @@ class Enve():
 
         self.index += 1
         
-        if (action==0 and max_charge >= self.soc + self.rate ):
+        if (action==0 and self.max_charge >= self.soc + self.rate ):
             # Buy power
             self.soc += self.rate
             reward = -power_price * self.rate * self.battery_cap
-        elif (action==1 and min_charge <= self.soc - self.rate ):
+        elif (action==1 and self.min_charge <= self.soc - self.rate ):
             # Sell power
             self.soc -= self.rate
             reward = power_price * self.rate * self.battery_cap
@@ -169,16 +169,16 @@ class Enve():
 
         return np.asarray(price_overtime), np.asarray(power_price), np.asarray(actions_taken), np.asarray(soc_overtime)
 
-Enve = Enve(max_charge = 0.8,min_charge = 0.2,rate = 0.1, battery_cap = 1500)
-power_price, actions_taken, soc_overtime = Enve.Linprog_True(0.6, 1000,1030)
-t = [i for i in range(len(power_price))]
+# Enve = Enve(max_charge = 0.8,min_charge = 0.2,rate = 0.1, battery_cap = 1500)
+# power_price, actions_taken, soc_overtime = Enve.Linprog_True(0.6, 1000,1030)
+# t = [i for i in range(len(power_price))]
 
-plt.plot(t, soc_overtime, 'b--')
-plt.plot(t, power_price, 'r--')
-plt.show
+# plt.plot(t, soc_overtime, 'b--')
+# plt.plot(t, power_price, 'r--')
+# plt.show
 
-price_overtime, power_price, actions_taken, soc_overtime = Enve.Linprog_predict_interval(0.6,1000,1030+24)
-t = [i for i in range(len(soc_overtime))]
-plt.plot(t, soc_overtime, 'g--')
-plt.plot(t, price_overtime, 'p--')
-plt.show
+# price_overtime, power_price, actions_taken, soc_overtime = Enve.Linprog_predict_interval(0.6,1000,1030+24)
+# t = [i for i in range(len(soc_overtime))]
+# plt.plot(t, soc_overtime, 'g--')
+# plt.plot(t, price_overtime, 'p--')
+# plt.show
