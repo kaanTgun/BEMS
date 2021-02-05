@@ -12,7 +12,6 @@ import numpy as np
 import pandas 
 from torch.utils.tensorboard import SummaryWriter
 
-
 class DQN_Actor():
 	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, OUTPUT_PATH='DQN_Model' ,eps_end=0.01, eps_dec=5e-4):
 		""" Initialte the Actor Agent 
@@ -133,6 +132,7 @@ class DoubleDQN_Actor():
 		self.eps_dec = eps_dec  
 		self.actions_space = [i for i in range(num_actions)]
 		self.replace = replace_networks 		
+		self.learn_counter = 0
 
 		self.memory = Memory(input_dims, batch_size)
 
@@ -182,29 +182,30 @@ class DoubleDQN_Actor():
 		if self.memory.mem_cntr < self.memory.batch_size:
 			return
 		
-		self.Q_Local.optimizer.zero_grad()
-		# Random eplore exploit 
-		self.epsilon_decay()
+		self.Q_Local.optimizer.zero_grad() 
 
-		if self.memory.mem_cntr % self.replace == 0:
+		if self.learn_counter % self.replace == 0:
 			self.replace_networks()
 
 		state, action, reward, new_state, terminal = self.sample_memory()
 		batch_index = np.arange(self.memory.batch_size, dtype=np.int32)
 
-		q_pred = self.Q_Local.forward(state)[batch_index, action]    
-		# Returns actions values for each batch, so slice by[batch_index, taken_Action] -> Return size(Batch, 1)
-		q_target_next = self.Q_Target.forward(new_state)                          
-		# Returns estimated next action values under the old policy  										-> Return size(Batch, num_actions)
-		q_target_next[terminal] = 0.0																						
-		# If this is the termination state, set all the state values as 0 							-> no next state 
+		q_local_pred 		= self.Q_Local.forward(state)[batch_index, action]
+		q_local_next 		= self.Q_Local.forward(new_state)
+		local_max_next_actions 		= T.argmax(q_local_next, dim=1)
 
-		q_target = reward + self.gamma * T.max(q_target_next, dim=1)[0]					
-		# Take the max estimated action for each batch, and use Q-Function for calculating q_target
-		loss     = self.Q_Local.loss(q_target, q_pred).to(self.Q_Local.device)
+		q_target_next 	= self.Q_Target.forward(new_state)[batch_index, local_max_next_actions]
+		q_target_next[terminal] = 0.0
+		
+		q_estimated = reward + self.gamma * q_target_next
+
+		loss     = self.Q_Local.loss(q_estimated, q_local_pred).to(self.Q_Local.device)
 		loss.backward()
 
 		self.Q_Local.optimizer.step()
+
+		self.epsilon_decay()
+		self.learn_counter+=1	
 
 class LSTM_Predictor():
 	def __init__(self, data_path, inputs_seq_len, output_seq_len, batch_size):

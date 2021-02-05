@@ -56,7 +56,6 @@ def eval_QNetwork(model_path, startIndex=100, endIndex=130, soc=0.6):
 	out = np.asarray(out)
 	return out
 
-
 def train_LSTM():
 	lstm = LSTM_Predictor(data_path=data_file, inputs_seq_len=24, output_seq_len=1, batch_size=2)
 	lstm.learn()
