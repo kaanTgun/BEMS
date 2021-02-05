@@ -2,3 +2,7 @@
 .vscode/
 __pycache__/
 data_/
+Model/
+Loss/
+DDQN_Model/
+DQN_Model/
