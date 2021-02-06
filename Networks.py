@@ -26,7 +26,7 @@ class DQN(nn.Module):
 	def forward(self,state):
 		x = F.relu(self.fc1(state))
 		x = F.relu(self.fc2(x))
-		self.fc3(x)								# Keep predicted Q-values raw	(-inf, +inf)
+		x = self.fc3(x)								# Keep predicted Q-values raw	(-inf, +inf)
 		return x
 
 	def save_checkpoint(self, i, score):

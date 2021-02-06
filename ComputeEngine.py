@@ -86,9 +86,6 @@ class DQN_Actor():
 			return
 		self.Q_eval.optimizer.zero_grad()
 
-		# Random eplore exploit 
-		self.epsilon_decay()
-
 		state, action, reward, new_state, terminal = self.sample_memory()
 
 		batch_index = np.arange(self.memory.batch_size, dtype=np.int32)
@@ -106,6 +103,9 @@ class DQN_Actor():
 		loss.backward()
 
 		self.Q_eval.optimizer.step()
+
+		# Random eplore exploit 
+		self.epsilon_decay()
 
 class DoubleDQN_Actor():
 	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, OUTPUT_PATH='DDQN_Model', replace_networks=200 ,eps_end=0.01, eps_dec=2e-4):
