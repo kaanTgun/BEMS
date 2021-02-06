@@ -1,4 +1,4 @@
-from Networks import DQN, LSTM
+from Networks import DQN
 from Utils import Memory
 import Utils
 
