@@ -26,13 +26,16 @@ def train_QNetwork(n_games):
 		game_scores.append(score)
 		avg_score = np.mean(game_scores[-100:], dtype=float)
 
-		if (i+1) % 100 == 0:
-			agent.writer.add_scalar("Avg. Score", avg_score, i)
+		if i>100:
+			if (i+1) % 10 == 0:
+				agent.writer.add_scalar("Avg. Score", avg_score, i+1)
+				print("Game: {} AvgScore: {:.3f}".format(i+1, avg_score))
+			agent.writer.add_scalar("Score", score, i)
 
-		print("Game: {} AvgScore: {:.3f}".format(i, avg_score))
+		if (i+1) % 4000 == 0:
+			agent.save_ckpt(i+1, "{:.3f}".format(avg_score))
 	
 	agent.writer.close()
-	agent.save_ckpt("{:.3f}".format(avg_score))
 
 def eval_QNetwork(model_path, startIndex=100, endIndex=130, soc=0.6):
 
@@ -66,7 +69,11 @@ if __name__ == "__main__":
 	env 	= Enve(DataFile_path=data_file, max_charge=0.8, min_charge=0.2, rate=0.1, battery_cap=1500)
 	agent = DoubleDQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
 
-	train_QNetwork(2000)
+	train_QNetwork(20_000)
+
+	agent = DQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
+
+	train_QNetwork(20_000)
 	print("...done...")
 
 	# train_LSTM()

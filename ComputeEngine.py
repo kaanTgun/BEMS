@@ -76,8 +76,8 @@ class DQN_Actor():
 		terminal  =T.tensor(terminal).to(self.Q_eval.device)
 		return state, action, reward, new_state, terminal
 
-	def save_ckpt(self, score):
-		self.Q_eval.save_checkpoint(score)
+	def save_ckpt(self, i, score):
+		self.Q_eval.save_checkpoint(i, score)
 	
 	def learn(self):
 		""" To start learing, fill up at least single batch_size of experience
@@ -108,7 +108,7 @@ class DQN_Actor():
 		self.Q_eval.optimizer.step()
 
 class DoubleDQN_Actor():
-	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, OUTPUT_PATH='DDQN_Model', replace_networks=1000 ,eps_end=0.01, eps_dec=5e-4):
+	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, OUTPUT_PATH='DDQN_Model', replace_networks=200 ,eps_end=0.01, eps_dec=2e-4):
 		""" Initialte the Actor Agent 
 
 		Args:
@@ -162,8 +162,7 @@ class DoubleDQN_Actor():
 			# Get the best action given the policy (DQN)
 			action = T.argmax(actions).item()
 		else:
-			action = np.random.choice(self.actions_space)
-		
+			action = np.random.choice(self.actions_space)		
 		return action
 
 	def sample_memory(self):
@@ -175,9 +174,9 @@ class DoubleDQN_Actor():
 		terminal  =T.tensor(terminal).to(self.Q_Local.device)
 		return state, action, reward, new_state, terminal
 
-	def save_ckpt(self, score):
-		self.Q_Local.save_checkpoint(score)
-
+	def save_ckpt(self, i, score):
+		self.Q_Local.save_checkpoint(i, score)
+	
 	def learn(self):
 		if self.memory.mem_cntr < self.memory.batch_size:
 			return
@@ -206,71 +205,6 @@ class DoubleDQN_Actor():
 
 		self.epsilon_decay()
 		self.learn_counter+=1	
-
-class LSTM_Predictor():
-	def __init__(self, data_path, inputs_seq_len, output_seq_len, batch_size):
-
-		self.data_path 			= data_path
-		self.input_seq_len 	= inputs_seq_len
-		self.output_seq_len = output_seq_len
-		self.batch_size 		= batch_size		
-
-		self.model = LSTM(input_dims=self.input_seq_len, \
-											output_dims=self.output_seq_len, hidden_dims=64)
-		self.sequance_dataset()
-
-	def sequance_dataset(self, percent_training=0.8):
-
-		features = []
-		labels = []
-
-		# Normalize the price of power data
-		df = pandas.read_csv(self.data_path)
-		scaler = MinMaxScaler(feature_range = (0, 1))
-		data_ls = scaler.fit_transform(df['HOEP'].to_numpy().reshape(1,-1))
-		train_data_last_index = (data_ls.size * percent_training) - ( (data_ls.size * percent_training) % self.batch_size )
-
-		features = np.zeros((train_data_last_index / self.batch_size, self.batch_size, self.input_seq_len, 1))
-		labels = np.zeros((train_data_last_index / self.batch_size, self.batch_size, self.input_seq_len, 1))
-
-		for index, item in enumerate(self.input_seq_len, data_ls.size - self.output_seq_len):
-			features.append(data_ls[ item-self.input_seq_len : i, 0])
-			labels.append(data_ls[i : i+self.output_seq_len, 0])
-		print(len(features))
-
-		train_seq = np.array(features[:48000], dtype=np.float32)
-		train_labels = np.array(labels[:48000], dtype=np.float32)
-
-		# (num_of_sequences, batch, sequence_len, num_features)
-		train_seq_ls 			= np.reshape(train_seq, (-1, self.batch_size, self.input_seq_len, 1))
-		train_labels_ls 	= np.reshape(train_labels, (-1, self.batch_size, self.output_seq_len, 1))	
-
-		print(type(train_labels_ls))
-
-		self.train_seq_ls 		= T.from_numpy(train_seq_ls).to(self.model.device)
-		self.train_labels_ls 	= T.from_numpy(train_labels_ls).to(self.model.device)
-
-		print("... Data Sequenced Successfully ...")
-
-	def learn(self, epoch=3):
-		for e in range(epoch):
-			print(self.train_seq_ls.size())
-
-			for index in range(self.train_seq_ls.size().item()):
-				print(self.train_seq_ls.size()[0])
-
-				self.train_seq_ls.ndim
-				
-				input_seq 	= self.train_seq_ls[index]
-				output_seq 	= self.train_labels_ls[index]
-
-				self.model.optimizer.zero_grad()
-				pred 		= self.model.forward(input_seq)
-				loss    = self.model.loss(pred, output_seq).to(self.model.device)
-				loss.backward()
-				self.model.optimizer.step()
-
-			print(f"Epoch: {e}, Loss: {loss}")
 
 class Linear_Programming():
 	def __init__(self, DataFile_path, maxCharge, minCharge, rate , batteryCap):
