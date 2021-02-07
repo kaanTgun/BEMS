@@ -79,6 +79,9 @@ class DQN_Actor():
 	def save_ckpt(self, i, score):
 		self.Q_eval.save_checkpoint(i, score)
 	
+	def load_ckpt(self, path):
+		self.Q_eval.load_checkpoint(path)
+
 	def learn(self):
 		""" To start learing, fill up at least single batch_size of experience
 		""" 
@@ -177,6 +180,9 @@ class DoubleDQN_Actor():
 	def save_ckpt(self, i, score):
 		self.Q_Local.save_checkpoint(i, score)
 	
+	def load_ckpt(self, path):
+		self.Q_Local.load_checkpoint(path)
+
 	def learn(self):
 		if self.memory.mem_cntr < self.memory.batch_size:
 			return
@@ -256,9 +262,8 @@ class Linear_Programming():
 
 		obj_func = np.array(power_price)
 
-		res = linprog(obj_func, A_ub=A, b_ub=b, bounds =[lb,ub])
-		actions = np.asarray(res.x)
-
+		result = linprog(obj_func, A_ub=A, b_ub=b, bounds =[lb,ub])
+		actions = np.asarray(result.x)
 
 		soc_overtime = np.matmul(np.transpose(np.expand_dims(actions, axis=1)), np.triu(np.ones((N,N))))
 
@@ -320,9 +325,6 @@ class Linear_Programming():
 			actions.append(action_t)
 			soc_overtime.append(float(soc))
 			price_overtime.append(obj_func[0])
-
-		# actions.append(res.x[1:])         # Store predicted Actions
-		# price_overtime.append(obj_func[1:])      # Store Predicted (Noisy) Price 
 
 		return np.asarray(price_overtime), np.asarray(power_price), np.asarray(actions), np.asarray(soc_overtime)
 

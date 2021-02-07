@@ -34,7 +34,6 @@ class DQN(nn.Module):
 		model_path = f'{self.checkpoint_path}/{self.name}_{i}_Weights_score_{score}.pt'
 		T.save(self.state_dict(), model_path)
 
-	def load_checkpoint(self, file_name):
+	def load_checkpoint(self, model_path):
 		print('... loading ckpt ...')
-		model_path = f'{self.checkpoint_path}/{file_name}'
 		self.load_state_dict(T.load(model_path, map_location=self.device))
