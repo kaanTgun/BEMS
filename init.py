@@ -59,11 +59,12 @@ if __name__ == "__main__":
 
 	env 	= Enve(DataFile_path=data_file, max_charge=0.8, min_charge=0.2, rate=0.1, battery_cap=1500)
 	
-	# agent = DoubleDQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
-	# train_QNetwork(12_000)
+	agent = DoubleDQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
+	train_QNetwork(12_000)
 	
 	agent = DQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
 	train_QNetwork(12_000)
+	
 	print("...done...")
 	
 	# lin_prog = Linear_Programming(data_file, maxCharge=0.8, minCharge=0.2, rate=0.1, batteryCap=0.6)

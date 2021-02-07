@@ -12,8 +12,8 @@ import numpy as np
 import pandas 
 from torch.utils.tensorboard import SummaryWriter
 
-class DQN_Actor():
-	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, OUTPUT_PATH='DQN_Model' ,eps_end=0.01, eps_dec=5e-4):
+class base_Actor():
+	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, name, OUTPUT_PATH, eps_end=0.01, eps_dec=5e-4):
 		""" Initialte the Actor Agent 
 
 		Args:
@@ -27,7 +27,7 @@ class DQN_Actor():
 				eps_end (float, optional): 			Defaults to 0.01.
 				eps_dec (float, optional): 			Epsilon declenation. Defaults to 5e-4.
 		"""
-		self.name = "DQN"
+		self.name = name
 		self.output_path = OUTPUT_PATH
 		self.gamma = gamma
 		self.epsilon = epsilon
@@ -39,9 +39,6 @@ class DQN_Actor():
 
 		Utils.create_log_folders(NETWORK_NAME=self.name, OUTPUT_PATH=self.output_path)
 		self.writer = SummaryWriter(f"{self.output_path}/runs")
-		
-		self.Q_eval = DQN(lr, input_dims, 256, 256, num_actions, \
-											checkpoint_path=self.output_path, name=self.name)  # Policy Object	
 
 	def store_transition(self, state, action, reward, new_state, done):
 		self.memory.store_transition(state, action, reward, new_state, done)
@@ -49,16 +46,41 @@ class DQN_Actor():
 	def epsilon_decay(self):
 		self.epsilon = self.epsilon - self.eps_dec if self.epsilon > self.eps_end else self.eps_end
 
+	def choose_action(self):
+		raise NotImplementedError
+	def sample_memory(self):
+		raise NotImplementedError
+	def save_ckpt(self, i, score):
+		raise NotImplementedError
+	def load_ckpt(self, path):
+		raise NotImplementedError
+	def learn(self):
+		raise NotImplementedError
+
+class DQN_Actor(base_Actor):
+	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, OUTPUT_PATH='DQN_Model' ,eps_end=0.01, eps_dec=5e-4, name='DQN'):
+		super().__init__(gamma, epsilon, lr, input_dims, batch_size, num_actions,name, OUTPUT_PATH ,eps_end, eps_dec,)
+		
+		self.Q_eval = DQN(lr, input_dims, 256, 256, num_actions, \
+											checkpoint_path=self.output_path, name=self.name)  # Policy Object	
+
 	def choose_action(self, observations, test=False):
 		""" Given the observations of the state, take an action to maximize the policy or take a random action
 
 		Args:
 				observations (List): State Space parameters
 		"""
+		if test:
+			self.Q_eval.eval()
+			with T.no_grad():
+				state = T.tensor(np.asarray(observations, dtype=np.float32)).to(self.Q_eval.device)
+				actions = self.Q_eval(state)
+				action = T.argmax(actions).item()
+				return action
 
-		if test or np.random.random() > self.epsilon:
+		if np.random.random() > self.epsilon:
 			state = T.tensor(np.asarray(observations, dtype=np.float32)).to(self.Q_eval.device)
-			actions = self.Q_eval.forward(state)
+			actions = self.Q_eval(state)
 			
 			# Get the best action given the policy (DQN)
 			action = T.argmax(actions).item()
@@ -93,9 +115,9 @@ class DQN_Actor():
 
 		batch_index = np.arange(self.memory.batch_size, dtype=np.int32)
 
-		q_eval = self.Q_eval.forward(state)[batch_index, action]    
+		q_eval = self.Q_eval(state)[batch_index, action]    
 		# Returns actions values for each batch, so slice by[batch_index, taken_Action] -> Return size(Batch, 1)
-		q_next = self.Q_eval.forward(new_state)                          
+		q_next = self.Q_eval(new_state)                          
 		# Returns estimated next action values under the current policy 								-> Return size(Batch, num_actions)
 		q_next[terminal] = 0.0																						
 		# If this is the termination state, set all the state values as 0 							-> no next state 
@@ -110,60 +132,37 @@ class DQN_Actor():
 		# Random eplore exploit 
 		self.epsilon_decay()
 
-class DoubleDQN_Actor():
-	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, OUTPUT_PATH='DDQN_Model', replace_networks=200 ,eps_end=0.01, eps_dec=2e-4):
-		""" Initialte the Actor Agent 
+class DoubleDQN_Actor(base_Actor):
+	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, \
+							replace_networks=200 ,eps_end=0.01, eps_dec=2e-4, OUTPUT_PATH='DDQN_Model', name='Double_DQN'):
+		super().__init__(gamma, epsilon, lr, input_dims, batch_size, num_actions, name, OUTPUT_PATH ,eps_end, eps_dec)
 
-		Args:
-				gamma (float): 			Discount rate of max reward
-				epsilon (float): 		Randomness
-				lr (float): 				Learining rate
-				input_dims (int): 		Dims of state space
-				batch_size (int): 		Batch size
-				num_actions (int): 		Number fo actions can be taken in the environment (discrete)
-				OUTPUT_PATH (str):		Save network weights in folder
-				replace_networks(int, optional)	Replace active and passive networks in n steps
-				max_mem_size (int, optional): 	Defaults to 100000.
-				eps_end (float, optional): 			Defaults to 0.01.
-				eps_dec (float, optional): 			Epsilon declenation. Defaults to 5e-4.
-		"""
-		self.name = "Double_DQN"
-		self.output_path = OUTPUT_PATH
-		self.gamma = gamma
-		self.epsilon = epsilon
-		self.eps_end = eps_end
-		self.eps_dec = eps_dec  
-		self.actions_space = [i for i in range(num_actions)]
 		self.replace = replace_networks 		
 		self.learn_counter = 0
-
-		self.memory = Memory(input_dims, batch_size)
-
-		Utils.create_log_folders(NETWORK_NAME=self.name, OUTPUT_PATH=self.output_path)
-		self.writer = SummaryWriter(f"{self.output_path}/runs")
 
 		self.Q_Local = DQN(lr, input_dims, 256, 256, num_actions, \
 											checkpoint_path=self.output_path, name="Q_Local")  # Policy Object 1
 
 		self.Q_Target = DQN(lr, input_dims, 256, 256, num_actions, \
 											checkpoint_path=self.output_path, name="Q_Target")  # Policy Object 2
-
-	def store_transition(self, state, action, reward, new_state, done):
-		self.memory.store_transition(state, action, reward, new_state, done)
 	
 	def replace_networks(self):
 		self.Q_Target.load_state_dict(self.Q_Local.state_dict())
 
-	def epsilon_decay(self):
-		self.epsilon = self.epsilon - self.eps_dec if self.epsilon > self.eps_end else self.eps_end
-
 	def choose_action(self, observations, test=False):
-		if test or np.random.random() > self.epsilon:
+		if test:
+			self.Q_eval.eval()
+			with T.no_grad():
+				state = T.tensor(np.asarray(observations, dtype=np.float32)).to(self.Q_eval.device)
+				actions = self.Q_eval(state)
+				action = T.argmax(actions).item()
+				return action
+
+		if np.random.random() > self.epsilon:
 			state = T.tensor(np.asarray(observations, dtype=np.float32)).to(self.Q_Local.device)
-			actions = self.Q_Local.forward(state)
-			
-			# Get the best action given the policy (DQN)
+			actions = self.Q_Local(state)			
 			action = T.argmax(actions).item()
+
 		else:
 			action = np.random.choice(self.actions_space)		
 		return action
@@ -195,11 +194,11 @@ class DoubleDQN_Actor():
 		state, action, reward, new_state, terminal = self.sample_memory()
 		batch_index = np.arange(self.memory.batch_size, dtype=np.int32)
 
-		q_local_pred 		= self.Q_Local.forward(state)[batch_index, action]
-		q_local_next 		= self.Q_Local.forward(new_state)
-		local_max_next_actions 		= T.argmax(q_local_next, dim=1)
+		q_local_pred 		= self.Q_Local(state)[batch_index, action]
+		q_local_next 		= self.Q_Local(new_state)
+		local_max_next_actions = T.argmax(q_local_next, dim=1)
 
-		q_target_next 	= self.Q_Target.forward(new_state)[batch_index, local_max_next_actions]
+		q_target_next 	= self.Q_Target(new_state)[batch_index, local_max_next_actions]
 		q_target_next[terminal] = 0.0
 		
 		q_estimated = reward + self.gamma * q_target_next
