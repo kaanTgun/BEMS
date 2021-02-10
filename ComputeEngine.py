@@ -1,4 +1,4 @@
-from Networks import DQN
+from Networks import DQN, Dueling_DQN
 from Utils import Memory
 import Utils
 
@@ -59,7 +59,7 @@ class base_Actor():
 
 class DQN_Actor(base_Actor):
 	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, OUTPUT_PATH='DQN_Model' ,eps_end=0.01, eps_dec=5e-4, name='DQN'):
-		super().__init__(gamma, epsilon, lr, input_dims, batch_size, num_actions,name, OUTPUT_PATH ,eps_end, eps_dec,)
+		super().__init__(gamma, epsilon, lr, input_dims, batch_size, num_actions,name, OUTPUT_PATH ,eps_end, eps_dec)
 		
 		self.Q_eval = DQN(lr, input_dims, 256, 256, num_actions, \
 											checkpoint_path=self.output_path, name=self.name)  # Policy Object	
@@ -151,10 +151,10 @@ class DoubleDQN_Actor(base_Actor):
 
 	def choose_action(self, observations, test=False):
 		if test:
-			self.Q_eval.eval()
+			self.Q_Local.eval()
 			with T.no_grad():
-				state = T.tensor(np.asarray(observations, dtype=np.float32)).to(self.Q_eval.device)
-				actions = self.Q_eval(state)
+				state = T.tensor(np.asarray(observations, dtype=np.float32)).to(self.Q_Local.device)
+				actions = self.Q_Local(state)
 				action = T.argmax(actions).item()
 				return action
 

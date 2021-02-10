@@ -5,10 +5,10 @@ def create_log_folders(NETWORK_NAME, OUTPUT_PATH, LOG_LOSS_DIR="Loss",\
 											 LOG_LOSS_T_PATH="Loss/Train", LOG_LOSS_V_PATH="Loss/Validate"):
 	if not os.path.exists(OUTPUT_PATH):
 		os.mkdir(OUTPUT_PATH)
-	if not os.path.exists(LOG_LOSS_DIR):
-		os.mkdir(LOG_LOSS_DIR)
-		os.mkdir(LOG_LOSS_T_PATH)
-		os.mkdir(LOG_LOSS_V_PATH)
+	# if not os.path.exists(LOG_LOSS_DIR):
+	# 	os.mkdir(LOG_LOSS_DIR)
+	# 	os.mkdir(LOG_LOSS_T_PATH)
+	# 	os.mkdir(LOG_LOSS_V_PATH)
 
 class Memory():
 	def __init__(self, input_dims, batch_size, max_mem_size=100000):

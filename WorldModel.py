@@ -5,7 +5,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 
 # Environment Constrains
-max_episode_length = 60
+max_episode_length = 200
 
 class Enve():
 	def __init__(self, DataFile_path, max_charge, min_charge, rate , battery_cap):
@@ -26,7 +26,7 @@ class Enve():
 		"""
 		self.soc        = np.random.choice([0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8])     # Percent state of charge 
 		self.startIndex = random.randint(0, self.columnCount - max_episode_length -1)
-		self.endIndex   = self.startIndex + random.randint(10, max_episode_length)
+		self.endIndex   = self.startIndex + random.randint(100, max_episode_length)
 		self.index      = self.startIndex
 		self.done       = False
 		return self.step(2)

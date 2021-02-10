@@ -14,6 +14,7 @@ The price of power data is taken from an online database provided by Independent
 -   📈  Linear programming
 -   📊  Linear programming with added noise within an interval
 -   🤖  Deep Q Network
+-   🤖 🤖  Double Deep Q Network
 
 
 ### 📈  Linear programming
@@ -24,3 +25,6 @@ One way to utilise the Linear programming is by assuming we would be able to pre
 
 ### 🤖  Deep Q Network
 DQN is a type of reinforcement learning method combined with deep neural networks. An agent by only knowing its current state(state-of-charge, current-power-price, month, hour) in a given environment, is required to take an action(charge, hold, discharge) and with regards to its action, it will receive a reward and a new state. The agent tries to explore and exploit this given model-free environment and tries to come up with the policy. 
+
+### 🤖 🤖 Double Q-Network
+There are two DQN models used to stabilise the training and reduces overestimations due to bellman backup. Local Network takes actions regarding to its current policy.The error is calculated by using the old policy stored in the Target Network.
