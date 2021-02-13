@@ -25,7 +25,7 @@ def train_QNetwork(n_games):
 		game_scores.append(score)
 		avg_score = np.mean(game_scores[-100:], dtype=float)
 
-		if i>100:
+		if i>10:
 			if (i+1) % 10 == 0:
 				agent.writer.add_scalar("Avg. Score", avg_score, i+1)
 				print("Game: {} AvgScore: {:.3f}".format(i+1, avg_score))
@@ -57,7 +57,7 @@ def eval_QNetwork(model_path, startIndex=100, endIndex=130, soc=0.6):
 if __name__ == "__main__":
 	data_file = "Data/PriceData.csv"
 
-	env 	= Enve(DataFile_path=data_file, max_charge=0.8, min_charge=0.2, rate=0.1, battery_cap=1500)
+	env 	= Enve(DataFile_path=data_file, max_charge=0.8, min_charge=0.2, rate=0.1, battery_cap=1500, max_episode_len=200, min_episode_len=100)
 	
 	agent = DoubleDQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
 	train_QNetwork(10_000)
