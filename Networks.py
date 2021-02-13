@@ -37,6 +37,12 @@ class DQN(nn.Module):
 	def load_checkpoint(self, model_path):
 		print('... loading ckpt ...')
 		self.load_state_dict(T.load(model_path, map_location=self.device))
+	
+	def __repr__(self):
+		return f'Fully Connected Neural Network: {self.name} \n \
+						Dimentions = {self.input_dims} | {self.fc1_dim} | {self.fc2_dim} | {self.n_actions} \n \
+						Optimizer  = {self.optimizer} \n \
+						Loss Function = {self.loss}'
 
 
 class Dueling_DQN(DQN):

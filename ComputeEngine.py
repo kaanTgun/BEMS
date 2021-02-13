@@ -56,6 +56,8 @@ class base_Actor():
 		raise NotImplementedError
 	def learn(self):
 		raise NotImplementedError
+	def __str__(self):
+		return 'This is an abstract base class, don\'t impliment it directly !'
 
 class DQN_Actor(base_Actor):
 	def __init__(self, gamma, epsilon, lr, input_dims, batch_size, num_actions, OUTPUT_PATH='DQN_Model' ,eps_end=0.01, eps_dec=5e-4, name='DQN'):

@@ -51,7 +51,7 @@ class Enve():
 		return ema_short
 	
 	def cycle_decay(self):
-		return math.exp(-0.01*int(self.chrg_ctr))
+		return math.exp(-0.03*int(self.chrg_ctr))
 
 	def test(self, startIndex, endIndex, soc):
 		""" With the given start-end index and SOC text the Policy in the environment  
@@ -148,6 +148,14 @@ class Enve():
 		
 		return reward
 
+	def __repr__(self):
+		return f'Environment: \nBattery Min SOC = {self.min_charge}\n \
+														Battery Max SOC = {self.max_charge}\n \
+														Battery Charge/Discaherge Rate = {self.rate}\n \
+														Battery Capacity (kWh) = {self.battery_cap}\n \
+														Battery Charge Efficiency = {self.chrg_eff}\n \
+														Battery Disharge Efficiency = {self.dischrg_eff}\n\
+														Episode Length = {self.min_episode_len} - {self.max_episode_len}\n'
 
 
 
