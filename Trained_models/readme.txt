@@ -1,0 +1,5 @@
+1: ema 24hr, exp(-0.03x) 
+2: ema 12hr, exp(-0.03x) 
+3: ema 24hr, exp(-0.01x)
+4: ema 6hr, exp(-0.03x) 
+5: ema 6hr, exp(-0.01x) 

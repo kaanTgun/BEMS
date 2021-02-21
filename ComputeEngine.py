@@ -329,19 +329,68 @@ class Linear_Programming():
 
 		return np.asarray(price_overtime), np.asarray(power_price), np.asarray(actions), np.asarray(soc_overtime)
 
-	# Enve = Enve(max_charge = 0.8,min_charge = 0.2,rate = 0.1, battery_cap = 1500)
-	# power_price, actions, soc_overtime = Enve.Linprog_True(0.6, 1000,1030)
-	# t = [i for i in range(len(power_price))]
+class EMA_Online():
+	def __init__(self, DataFile_path, maxCharge, minCharge, rate , batteryCap):
+		self.df = pandas.read_csv(DataFile_path)        
+		self.max_charge = maxCharge
+		self.min_charge = minCharge
+		self.rate = rate               
+		self.battery_cap = batteryCap
 
-	# plt.plot(t, soc_overtime, 'b--')
-	# plt.plot(t, power_price, 'r--')
-	# plt.show
+	def run(self, soc, startIndex, endIndex, window):
+		self.start_index = startIndex
+		self.end_index   = endIndex
+		self.index = self.start_index
+		self.soc=soc
+		self.window = window
 
-	# price_overtime, power_price, actions, soc_overtime = Enve.Linprog_predict_interval(0.6,1000,1030+24)
-	# t = [i for i in range(len(soc_overtime))]
-	# plt.plot(t, soc_overtime, 'g--')
-	# plt.plot(t, price_overtime, 'p--')
-	# plt.show
+		N = self.end_index - self.start_index
+		ls_actions = []
+		soc_overtime = []
+		
+		while(self.index != self.end_index):
+			rowData = self.df.iloc[self.index]
+			curr_price = float(rowData['HOEP'])
+			action = self.strategy_1(self.window, curr_price)
+			soc_overtime.append(self.soc)
+			ls_actions.append(action)
+			self.index +=1
+
+		# Convert actions to SOC_overtime
+		soc_overtime = np.asarray(soc_overtime)
+		ls_actions = np.asarray(ls_actions)
+
+		rowData = self.df.iloc[self.start_index:self.end_index]
+		price_of_power = np.array(rowData['HOEP']/1000)
+
+		return price_of_power, ls_actions, soc_overtime
+		
+
+	def ema(self, n_interval):
+		""" Exponential moving average calc.
+		https://www.learndatasci.com/tutorials/python-finance-part-3-moving-average-trading-strategy/
+		Args:
+				n_interval (int): past N intervals
+		"""
+		data = self.df.iloc[self.index - n_interval : self.index]
+		power_price = data['HOEP']/1000
+
+		ema_short = power_price.ewm(span=n_interval, adjust=False).mean()
+		return ema_short
+	
+	def strategy_1(self, n_interval, curr_price):
+		# Buy=0, sell=1, hold=2
+		curr_ema = self.ema(n_interval).iloc[-1]
+		if self.soc+0.1 < self.max_charge and curr_price < curr_ema:
+			action = +0.1
+			self.soc +=0.1
+		elif self.soc-0.1 > self.min_charge and curr_price > curr_ema:
+			action = -0.1
+			self.soc -=0.1
+		else:
+			action = 0
+		return action
+
 
 
 

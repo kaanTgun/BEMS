@@ -44,7 +44,6 @@ class DQN(nn.Module):
 						Optimizer  = {self.optimizer} \n \
 						Loss Function = {self.loss}'
 
-
 class Dueling_DQN(DQN):
 	def __init__(self, lr, input_dims, fc1_dim, fc2_dim, fc3_dim,  n_actions, checkpoint_path, name):
 		super().__init__(lr, input_dims, fc1_dim, fc2_dim, n_actions, checkpoint_path, name)
