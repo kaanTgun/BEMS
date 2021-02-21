@@ -67,7 +67,8 @@ if __name__ == "__main__":
 	
 	# print("...done...")
 	
-
+	# ema_ = EMA_Online( data_file, maxCharge=0.8, minCharge=0.2, rate=0.1 , batteryCap =100)
+	# ema_.run(soc=0.6, startIndex=100, endIndex=150, window=6)
 	# python3 -m tensorboard.main --logdir=~/my/training/dir
 	
 		

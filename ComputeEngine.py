@@ -348,7 +348,7 @@ class EMA_Online():
 		ls_actions = []
 		soc_overtime = []
 		
-		while(self.index != self.end_index):
+		while(self.index <= self.end_index):
 			rowData = self.df.iloc[self.index]
 			curr_price = float(rowData['HOEP'])
 			action = self.strategy_1(self.window, curr_price)
@@ -381,6 +381,7 @@ class EMA_Online():
 	def strategy_1(self, n_interval, curr_price):
 		# Buy=0, sell=1, hold=2
 		curr_ema = self.ema(n_interval).iloc[-1]
+
 		if self.soc+0.1 < self.max_charge and curr_price < curr_ema:
 			action = +0.1
 			self.soc +=0.1
