@@ -28,3 +28,5 @@ DQN is a type of reinforcement learning method combined with deep neural network
 
 ### 🤖 🤖 Double Q-Network
 There are two DQN models used to stabilise the training and reduces overestimations due to bellman backup. Local Network takes actions regarding to its current policy.The error is calculated by using the old policy stored in the Target Network.
+
+See the visual representaion of this project at: https://kaantgun.github.io/BEMS_WebApp/ 
