@@ -1,5 +1,5 @@
-from WorldModel import Enve 
-from ComputeEngine import DQN_Actor, DoubleDQN_Actor, Linear_Programming, EMA_Online
+from src.WorldModel import Enve 
+from src.ComputeEngine import DQN_Actor, DoubleDQN_Actor, Linear_Programming, EMA_Online
 
 import torch
 import numpy as np
@@ -57,15 +57,15 @@ def eval_QNetwork(model_path, startIndex=100, endIndex=130, soc=0.6):
 if __name__ == "__main__":
 	data_file = "Data/PriceData.csv"
 
-	# env 	= Enve(DataFile_path=data_file, max_charge=0.8, min_charge=0.2, rate=0.1, battery_cap=1500, max_episode_len=200, min_episode_len=100)
+	env 	= Enve(DataFile_path=data_file, max_charge=0.8, min_charge=0.2, rate=0.1, battery_cap=1500, max_episode_len=200, min_episode_len=100)
 	
 	# agent = DoubleDQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
 	# train_QNetwork(10_000)
 	
-	# agent = DQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
-	# train_QNetwork(10_000)
+	agent = DQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
+	train_QNetwork(10_000)
 	
-	# print("...done...")
+	print("...done...")
 	
 	# ema_ = EMA_Online( data_file, maxCharge=0.8, minCharge=0.2, rate=0.1 , batteryCap =100)
 	# ema_.run(soc=0.6, startIndex=100, endIndex=150, window=6)

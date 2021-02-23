@@ -1,6 +1,6 @@
-from Networks import DQN, Dueling_DQN
-from Utils import Memory
-import Utils
+from src.Networks import DQN, Dueling_DQN
+from src.Utils import Memory
+import src.Utils
 
 import torch as T
 import torch.nn as nn
@@ -37,7 +37,7 @@ class base_Actor():
 
 		self.memory = Memory(input_dims, batch_size)
 
-		Utils.create_log_folders(NETWORK_NAME=self.name, OUTPUT_PATH=self.output_path)
+		src.Utils.create_log_folders(NETWORK_NAME=self.name, OUTPUT_PATH=self.output_path)
 		self.writer = SummaryWriter(f"{self.output_path}/runs")
 
 	def store_transition(self, state, action, reward, new_state, done):
