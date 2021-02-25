@@ -59,7 +59,7 @@ if __name__ == "__main__":
 	
 
 	env 	= Enve(DataFile_path=data_file, max_charge=0.8, min_charge=0.2, rate=0.1, battery_cap=1500, \
-								strategy_no=3, ema_coeff=-0.03, ema_len=6, max_episode_len=200, min_episode_len=100)
+								strategy_no=3, ema_coeff=-0.05, ema_len=6, max_episode_len=200, min_episode_len=100)
 	
 	agent = DoubleDQN_Actor(gamma=0.99, epsilon=1, lr=0.001, input_dims=4, batch_size=32, num_actions=3)
 	train_QNetwork(10_000)

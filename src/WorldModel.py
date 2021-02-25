@@ -112,11 +112,13 @@ class Enve():
 			if (3 == self.strategy_no):
 				ema = self.ema(self.ema_len).iloc[-1]
 				alpha = self.cycle_decay()
+				
 
 				self.chrg_ctr += self.rate
 				coeff = -0.99 if ema > power_price else -0.5
 				coeff /= self.chrg_eff
-				coeff *= alpha
+				coeff /= alpha
+
 
 		elif (action==1 and self.min_charge <= self.soc - self.rate ):
 			# Sell power
@@ -134,7 +136,10 @@ class Enve():
 
 				coeff = 0.5 if ema > power_price else 0.99
 				coeff *= self.chrg_eff
+				print('---', coeff)
+
 				coeff *= alpha
+				print('--->>>',coeff)
 
 		else:
 			coeff = -0.001
