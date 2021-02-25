@@ -136,10 +136,7 @@ class Enve():
 
 				coeff = 0.5 if ema > power_price else 0.99
 				coeff *= self.chrg_eff
-				print('---', coeff)
-
 				coeff *= alpha
-				print('--->>>',coeff)
 
 		else:
 			coeff = -0.001
