@@ -7,7 +7,9 @@ import matplotlib.pyplot as plt
 
 
 class Enve():
-	def __init__(self, DataFile_path, max_charge, min_charge, rate , battery_cap, max_episode_len, min_episode_len=24, chrg_eff=1, dischrg_eff=1):
+	def __init__(self, DataFile_path, max_charge, min_charge, rate , battery_cap, \
+											strategy_no=1, ema_coeff=-0.03, ema_len=24 , max_episode_len=200, \
+											min_episode_len=24, chrg_eff=1, dischrg_eff=1):
 
 		self.df = pandas.read_csv(DataFile_path)        # data is in terms of Cents/kWh
 		self.columnCount = self.df['Date'].count()
@@ -16,6 +18,11 @@ class Enve():
 		self.min_charge = min_charge
 		self.rate = rate               # percent rate of charge and discharge in every time step
 		self.battery_cap = battery_cap # kWh
+
+		self.strategy_no = strategy_no
+		self.ema_coeff = ema_coeff
+		self.ema_len = ema_len
+
 
 		self.chrg_eff = chrg_eff
 		self.dischrg_eff = dischrg_eff
@@ -51,7 +58,7 @@ class Enve():
 		return ema_short
 	
 	def cycle_decay(self):
-		return math.exp(-0.03*int(self.chrg_ctr))
+		return math.exp(self.ema_coeff*int(self.chrg_ctr))
 
 	def test(self, startIndex, endIndex, soc):
 		""" With the given start-end index and SOC text the Policy in the environment  
@@ -85,68 +92,56 @@ class Enve():
 		date_time   = datetime.strptime(rowData['Date'], '%Y-%m-%d %H:%M:%S')
 		self.index += 1
 
-		reward = self.strategy_2(power_price, action)
+		reward = self.strategy(power_price, action)
 				
 		if self.index >= self.endIndex: self.done=True
 
 		return (date_time.hour, date_time.month+date_time.day*0.1, self.soc, power_price), reward, self.done
 
-	def strategy_1(self, power_price, action):
+	def strategy(self, power_price, action):
 		if (action==0 and self.max_charge >= self.soc + self.rate ):
 			# Buy power
 			self.soc += self.rate
-			coeff = -1
+			if (1 == self.strategy_no):
+				coeff = -1
+			if (2 == self.strategy_no):
+				ema = self.ema(self.ema_len).iloc[-1]
+				
+				coeff = -0.99 if ema > power_price else -0.5
+				coeff /= self.chrg_eff
+			if (3 == self.strategy_no):
+				ema = self.ema(self.ema_len).iloc[-1]
+				alpha = self.cycle_decay()
+
+				self.chrg_ctr += self.rate
+				coeff = -0.99 if ema > power_price else -0.5
+				coeff /= self.chrg_eff
+				coeff *= alpha
+
 		elif (action==1 and self.min_charge <= self.soc - self.rate ):
 			# Sell power
 			self.soc -= self.rate
-			coeff = 1
+			if (1 == self.strategy_no):
+				coeff = 1
+			if (2 == self.strategy_no):
+				ema = self.ema(self.ema_len).iloc[-1]
+
+				coeff = 0.5 if ema > power_price else 0.99
+				coeff *= self.dischrg_eff
+			if (3 == self.strategy_no):
+				ema = self.ema(self.ema_len).iloc[-1]
+				alpha = self.cycle_decay()
+
+				coeff = 0.5 if ema > power_price else 0.99
+				coeff *= self.chrg_eff
+				coeff *= alpha
+
 		else:
 			coeff = -0.001
 		
 		reward = power_price * self.rate * self.battery_cap * coeff
 		return reward
 
-	def strategy_2(self, power_price, action):
-		
-		ema = self.ema(24).iloc[-1]
-		if action==0 and self.max_charge >= self.soc + self.rate:
-			# Buy power
-			self.soc += self.rate
-			coeff = -0.999 if (ema > power_price) else -0.5
-			coeff /= self.chrg_eff
-
-		elif action==1 and self.min_charge <= self.soc - self.rate:
-			self.soc -= self.rate
-			# Sell power
-			coeff = 0.5 if ema > power_price else 0.999
-			coeff *= self.dischrg_eff
-		else:
-			coeff = -0.001
-		reward = power_price * self.rate * self.battery_cap * coeff
-		return reward
-
-	def strategy_3(self, power_price, action):
-		ema = self.ema(24).iloc[-1]
-		alpha = self.cycle_decay()
-
-		if action==0 and self.max_charge >= self.soc + self.rate:
-			# Buy power
-			self.soc += self.rate
-			self.chrg_ctr += self.rate
-
-			coeff = -0.99 if ema > power_price else -0.5
-			coeff /= self.chrg_eff
-
-		elif action==1 and self.min_charge <= self.soc - self.rate:
-			self.soc -= self.rate
-			# Sell power
-			coeff = 0.5 if ema > power_price else 0.99
-			coeff *= self.chrg_eff
-		else:
-			coeff = -0.001
-		reward = power_price * self.rate * self.battery_cap * coeff * alpha
-		
-		return reward
 
 	def __repr__(self):
 		return f'Environment: \nBattery Min SOC = {self.min_charge}\n \
