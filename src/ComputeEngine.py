@@ -259,11 +259,11 @@ class Linear_Programming():
 		ub = self.rate
 
 		rowData = self.df.iloc[self.start_index:self.end_index]
-		power_price = rowData['HOEP']/1000
+		power_price = rowData['HOEP']
 
 		obj_func = np.array(power_price)
 
-		result = linprog(obj_func, A_ub=A, b_ub=b, bounds =[lb,ub])
+		result = linprog(obj_func, A_ub=A, b_ub=b, bounds =[lb,ub], options={'sym_pos':False, 'tol':0.00001})
 		actions = np.asarray(result.x)
 
 		soc_overtime = np.matmul(np.transpose(np.expand_dims(actions, axis=1)), np.triu(np.ones((N,N))))
@@ -273,7 +273,7 @@ class Linear_Programming():
 
 		return obj_func, actions, soc_overtime
 	
-	def linprog_predict_interval(self, soc, startIndex, endIndex, horizon=24, step=1, noise_magnitude=0.03):
+	def linprog_predict_interval(self, soc, startIndex, endIndex, horizon=24, step=1, mu=0, minSigma=0.5, maxSigma=1, magnitude=10):
 		""" Starting from the startIndex, solve for the optimal strategy for the predicted horizon length (true+noise), 
 		take the next action (t+1) and recalculate the predicted horizon again until the endIndex is reached  
 
@@ -283,7 +283,10 @@ class Linear_Programming():
 				endIndex (int): 						End index
 				horizon (int, optional): 		Solve for the next n intervals. Defaults to 24.
 				step (int, optional): 			Apply linear programming in every given step. Defaults to 1.
-				noise_magnitude (float, optional): Applied as the predicttion error. Defaults to 0.03.
+
+				mu (float, optional): 			Mean of the Normal distribution
+				minSigma (float, optional):	Std derivation of the Normal distribution applied to the closest prediction
+				maxSigma (float, optional):	Std derivation of the Normal distribution applied to the furthest prediction
 
 		Returns:
 				price_overtime (float List): 	Predicted price of power over time
@@ -304,23 +307,22 @@ class Linear_Programming():
 		ub = self.rate
 
 		row_Data = self.df.iloc[self.start_index : self.end_index]
-		power_price = np.array(row_Data['HOEP']/1000)
+		power_price = np.array(row_Data['HOEP'])
 		
-		soc_overtime = [soc]
-		actions = [0]
-		price_overtime = [0]
+		soc_overtime = []
+		actions = []
+		price_overtime = []
 
 		for i in range(0, N-horizon+1, step):
-			noise = np.random.rand(horizon) * noise_magnitude            
-			price_with_noise = noise + power_price[i : i+horizon]
+			noise_over_horizon = np.array([np.random.normal(loc=mu, scale=x) for x in np.arange(minSigma, maxSigma, horizon)])
+			obj_func = np.add(noise_over_horizon* magnitude , power_price[i : i+horizon])
 
-			obj_func = np.array(price_with_noise)
 			b = np.append((self.max_charge-soc)*np.ones((horizon,1)),\
 										(soc-self.min_charge)*np.ones((horizon,1)))
 			
 
 			res = linprog(obj_func, A_ub=A, b_ub=b, bounds=[lb,ub])
-			action_t = round(100*res.x[0])/100    		# Take the first action computed
+			action_t = np.round_(res.x[0], 1)
 			soc += action_t
 
 			actions.append(action_t)
@@ -336,6 +338,8 @@ class EMA_Online():
 		self.min_charge = minCharge
 		self.rate = rate               
 		self.battery_cap = batteryCap
+		self.cycle_cntr =0
+
 
 	def run(self, soc, startIndex, endIndex, window):
 		self.start_index = startIndex
@@ -363,7 +367,7 @@ class EMA_Online():
 		rowData = self.df.iloc[self.start_index:self.end_index]
 		price_of_power = np.array(rowData['HOEP']/1000)
 
-		return price_of_power, ls_actions, soc_overtime
+		return price_of_power, ls_actions, soc_overtime, int(self.cycle_cntr)
 		
 
 	def ema(self, n_interval):
@@ -385,6 +389,8 @@ class EMA_Online():
 		if self.soc+0.1 < self.max_charge and curr_price < curr_ema:
 			action = +0.1
 			self.soc +=0.1
+			self.cycle_cntr +=0.1
+
 		elif self.soc-0.1 > self.min_charge and curr_price > curr_ema:
 			action = -0.1
 			self.soc -=0.1
