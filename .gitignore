@@ -7,3 +7,5 @@ Loss/
 DDQN_Model/
 DQN_Model/
 Trained_models.zip
+Final_Test_Results/
+Data/PriceData.xlsm
